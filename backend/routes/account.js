@@ -69,18 +69,20 @@ router.post('/transfer', authMiddleware, async (req, res) => {
 
 router.get('/transactions/pdf', authMiddleware, async (req, res) => {
     try {
-        // Fetch user's transactions
+        console.log('User ID:', req.userId); // Verify userId is set
         const transactions = await Transaction.find({
             $or: [{ senderId: req.userId }, { receiverId: req.userId }]
         }).populate('senderId receiverId', 'username firstName lastName');
 
-        // Create PDF
+        if (!transactions.length) {
+            return res.status(404).json({ message: 'No transactions found' });
+        }
+
         const doc = new PDFDocument();
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="transactions.pdf"');
         doc.pipe(res);
 
-        // PDF content
         doc.fontSize(16).text('Transaction History', { align: 'center' });
         doc.moveDown();
         doc.fontSize(12);
@@ -97,6 +99,7 @@ router.get('/transactions/pdf', authMiddleware, async (req, res) => {
 
         doc.end();
     } catch (error) {
+        console.error('PDF Error:', error);
         res.status(500).json({ message: 'Error generating PDF', error: error.message });
     }
 });

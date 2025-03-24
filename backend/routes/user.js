@@ -2,7 +2,6 @@ import express from 'express';
 import zod from 'zod';
 import { User, Account } from '../db.js'; 
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config.js'; 
 import { authMiddleware } from '../middleware/auth.js'; 
 
 const router = express.Router();
@@ -13,6 +12,8 @@ const signupBody = zod.object({
     lastName: zod.string(),
     password: zod.string()
 });
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 router.post('/signup', async (req, res) => {
     const { success } = signupBody.safeParse(req.body);
@@ -102,7 +103,7 @@ router.put('/', authMiddleware, async (req, res) => {
     });
 });
 
-router.get('/bulk', async (req, res) => {
+router.get('/bulk', authMiddleware, async (req, res) => {
     const filter = req.query.filter || '';
 
     const users = await User.find({
