@@ -61,8 +61,12 @@ const transactionSchema = new mongoose.Schema({
     amount: {
         type: Number,
         required: true
+    },
+    createdAt: { 
+        type: Date, default: Date.now 
     }
 })
+
 
 const Account = mongoose.model('Account', accountSchema);
 const User = mongoose.model('User', userSchema);

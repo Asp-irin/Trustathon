@@ -1,6 +1,6 @@
 import express from 'express';
 import zod from 'zod';
-import { User, Account } from '../db.js'; 
+import { User, Account, Transaction } from '../db.js'; 
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../middleware/auth.js'; 
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth.js'; 
-import { Account } from '../db.js'; 
+import { Account, Transaction } from '../db.js'; 
 import mongoose from 'mongoose';
 import PDFDocument from 'pdfkit';
 
@@ -74,28 +74,30 @@ router.get('/transactions/pdf', authMiddleware, async (req, res) => {
             $or: [{ senderId: req.userId }, { receiverId: req.userId }]
         }).populate('senderId receiverId', 'username firstName lastName');
 
-        if (!transactions.length) {
-            return res.status(404).json({ message: 'No transactions found' });
-        }
-
+        // Create PDF
         const doc = new PDFDocument();
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="transactions.pdf"');
         doc.pipe(res);
 
+        // PDF content
         doc.fontSize(16).text('Transaction History', { align: 'center' });
         doc.moveDown();
         doc.fontSize(12);
 
-        transactions.forEach((tx, index) => {
-            const sender = `${tx.senderId.firstName} ${tx.senderId.lastName}`;
-            const receiver = `${tx.receiverId.firstName} ${tx.receiverId.lastName}`;
-            doc.text(`${index + 1}. Amount: ${tx.amount}`);
-            doc.text(`   From: ${sender} (${tx.senderId.username})`);
-            doc.text(`   To: ${receiver} (${tx.receiverId.username})`);
-            doc.text(`   Date: ${new Date(tx.createdAt).toLocaleString()}`);
-            doc.moveDown();
-        });
+        if (!transactions.length) {
+            doc.text('There are no transactions.', { align: 'center' });
+        } else {
+            transactions.forEach((tx, index) => {
+                const sender = `${tx.senderId.firstName} ${tx.senderId.lastName}`;
+                const receiver = `${tx.receiverId.firstName} ${tx.receiverId.lastName}`;
+                doc.text(`${index + 1}. Amount: ${tx.amount}`);
+                doc.text(`   From: ${sender} (${tx.senderId.username})`);
+                doc.text(`   To: ${receiver} (${tx.receiverId.username})`);
+                doc.text(`   Date: ${new Date(tx.createdAt).toLocaleString()}`);
+                doc.moveDown();
+            });
+        }
 
         doc.end();
     } catch (error) {
