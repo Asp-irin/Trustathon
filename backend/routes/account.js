@@ -69,13 +69,26 @@ router.post('/transfer', authMiddleware, async (req, res) => {
 
 router.get('/transactions/pdf', authMiddleware, async (req, res) => {
     try {
-        console.log('User ID:', req.userId); // Verify userId is set
+        console.log('User ID:', req.userId);
         const transactions = await Transaction.find({
             $or: [{ senderId: req.userId }, { receiverId: req.userId }]
         }).populate('senderId receiverId', 'username firstName lastName');
 
-        // Create PDF
-        const doc = new PDFDocument();
+        // Create PDF with password protection
+        const doc = new PDFDocument({
+            userPassword: process.env.PDF_PASSWORD, // Password to open the PDF
+            ownerPassword: process.env.PDF_PASSWORD, // Optional: allows full access (can be different)
+            permissions: { // Optional: restrict actions
+                printing: 'highResolution',
+                modifying: false,
+                copying: false,
+                annotating: false,
+                fillingForms: false,
+                contentAccessibility: false,
+                documentAssembly: false
+            }
+        });
+
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="transactions.pdf"');
         doc.pipe(res);
